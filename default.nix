@@ -1,20 +1,41 @@
 { pkgs ? import <nixpkgs> {} }:
 with pkgs;
+let cacheFile =
+  let
+DEPENDENCIES_BASE_URL = "https://github.com/edo9300/edopro-vcpkg-cache/releases/download/20220210";
+VCPKG_CACHE_7Z_URL = "${DEPENDENCIES_BASE_URL}/installed_x64-linux.7z";
+    in
+  fetchurl {
+  url = VCPKG_CACHE_7Z_URL;
+  # sha256 = "1111111111111111111111111111111111111111111111111111";
+  sha256 = "sha256-eKGDD3qQobX4pjDL5Oxta+Tw4h2w0tS0ckgAS40152M=";
+};
+    in
 stdenv.mkDerivation {
   name = "edopro";
   src = ./. ;
+  # cmakeFlags = [
+  #     "-DIRRLICHT_INCLUDE_DIR=${irrlicht}/include/irrlicht"
+  #   ];
+
+  # CPLUS_INCLUDE_PATH = "${irrlicht}/include/irrlicht";
+  # CPLUS_INCLUDE_PATH = "${irrlicht}/include/irrlicht";
   buildInputs = with pkgs; [
     upx
 
     git curl p7zip
-    gcc
+    # gcc
+    clang
     unzip
     # tar
     readline
     freetype
-    irrlicht
+    # irrlicht
+    mesa
     libGLU
     lua5_4
+    xorg.libX11
+    xorg.libX11.dev
     (premake5.overrideAttrs (old: rec {
         version = "5.0.0-alpha15";
 
@@ -36,33 +57,29 @@ stdenv.mkDerivation {
   ];
 
 
-VCPKG_ROOT= "$PWD/vcpkg";
+VCPKG_ROOT= "vcpkg";
+# inherit irrlicht;
+inherit cacheFile;
 
 buildPhase =
 
-let cacheFile =
-  let
-DEPENDENCIES_BASE_URL = "https://github.com/edo9300/edopro-vcpkg-cache/releases/download/20220210";
-VCPKG_CACHE_7Z_URL = "${DEPENDENCIES_BASE_URL}/installed_x64-linux.7z";
-    in
-  fetchurl {
-  url = VCPKG_CACHE_7Z_URL;
-  # sha256 = "1111111111111111111111111111111111111111111111111111";
-  sha256 = "sha256-eKGDD3qQobX4pjDL5Oxta+Tw4h2w0tS0ckgAS40152M=";
-};
-    in
   ''
-echo "my files are currently"
-ls
+pwd
+echo "root directory is $VCPKG_ROOT"
 mkdir -p "$VCPKG_ROOT"
 cd "$VCPKG_ROOT"
+pwd
 7z x ${cacheFile}
-cd -
+echo "finished 7zipping"
+export CPLUS_INCLUDE_PATH=$CPLUS_INCLUDE_PATH:"$PWD/installed/x64-linux/include/irrlicht"
+echo "$CPLUS_INCLUDE_PATH"
+ls
+cd ..
 echo "Finished extraction"
 echo "my files are currently"
 ls
 premake5 gmake2 --vcpkg-root=$VCPKG_ROOT
-make -Cbuild -j2 config=release ygoprodll
+make -Cbuild -j2 config=debug ygoprodll
 '';
 
   installPhase = ''
