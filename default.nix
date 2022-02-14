@@ -31,27 +31,9 @@ stdenv.mkDerivation {
   #   ];
 
   CPLUS_INCLUDE_PATH = "${edoIrr}/include/irrlicht";
-    # CPLUS_INCLUDE_PATH = "${irrlicht}/include/irrlicht";
     buildInputs = with pkgs; [
-            upx
-
-            git curl p7zip
-            fmt
-            # gcc
-            clang
-            unzip
-            # tar
-            readline
-            freetype
-            mesa
-            libGLU
-            libGL
-            libevent
-            libgit2
-            lua5_4
-            xorg.libX11
-            xorg.libX11.dev
             edoIrr
+            fmt
 
 
             (premake5.overrideAttrs (old: rec {
