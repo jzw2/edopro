@@ -1,16 +1,28 @@
 { pkgs ? import <nixpkgs> {} }:
 with pkgs;
-let cacheFile =
-  let
-DEPENDENCIES_BASE_URL = "https://github.com/edo9300/edopro-vcpkg-cache/releases/download/20220210";
-VCPKG_CACHE_7Z_URL = "${DEPENDENCIES_BASE_URL}/installed_x64-linux.7z";
-    in
-  fetchurl {
-  url = VCPKG_CACHE_7Z_URL;
-  # sha256 = "1111111111111111111111111111111111111111111111111111";
-  sha256 = "sha256-eKGDD3qQobX4pjDL5Oxta+Tw4h2w0tS0ckgAS40152M=";
-};
-    in
+let edoIrr =
+      (irrlicht.overrideAttrs (old: rec {
+
+        version = "edo";
+
+        src = fetchFromGitHub {
+          owner = "edo9300";
+          repo = "irrlicht1-8-4";
+          rev = "6fecacf97e56aba50498eb1a15653366d2e29a59";
+          # sha256 = "0000000000000000000000000000000000000000000000000000";
+          sha256 = "sha256-jU54vH96QRRJOGRqEu/fiiHIOF3apnkd28xeuH+i1BQ=";
+        };
+
+        buildInputs = old.buildInputs ++ [
+          libGL
+          libxkbcommon
+          wayland
+          xorg.libX11
+          xorg.libXxf86vm
+        ];
+      }));
+    type = "debug";
+in
 stdenv.mkDerivation {
   name = "edopro";
   src = ./. ;
@@ -18,72 +30,89 @@ stdenv.mkDerivation {
   #     "-DIRRLICHT_INCLUDE_DIR=${irrlicht}/include/irrlicht"
   #   ];
 
-  # CPLUS_INCLUDE_PATH = "${irrlicht}/include/irrlicht";
-  # CPLUS_INCLUDE_PATH = "${irrlicht}/include/irrlicht";
-  buildInputs = with pkgs; [
-    upx
+  CPLUS_INCLUDE_PATH = "${edoIrr}/include/irrlicht";
+    # CPLUS_INCLUDE_PATH = "${irrlicht}/include/irrlicht";
+    buildInputs = with pkgs; [
+            upx
 
-    git curl p7zip
-    # gcc
-    clang
-    unzip
-    # tar
-    readline
-    freetype
-    # irrlicht
-    mesa
-    libGLU
-    lua5_4
-    xorg.libX11
-    xorg.libX11.dev
-    (premake5.overrideAttrs (old: rec {
-        version = "5.0.0-alpha15";
-
-        src = fetchFromGitHub {
-          owner = "premake";
-          repo = "premake-core";
-          rev = "v${version}";
-          # sha256 = "0000000000000000000000000000000000000000000000000000";
-          # 12
-          # sha256 = "sha256-7mN7zhJ0++YO2xq1E0APskzwWaMCvEWstCT9dk3KcMA=";
-          #
-          # 14
-          # sha256 = "sha256-qwIE9qLE0hLNsZPhDrS1+BzwE3nZi8wcQ1AGS88SlrI=";
-          #
-          # 15
-          sha256 = "sha256-8Pdhqwek8zWLcahMgV+fdbsU3tA9oOnefvn6vvBhvDE=";
-        };
-      }))
-  ];
+            git curl p7zip
+            fmt
+            # gcc
+            clang
+            unzip
+            # tar
+            readline
+            freetype
+            mesa
+            libGLU
+            libGL
+            libevent
+            libgit2
+            lua5_4
+            xorg.libX11
+            xorg.libX11.dev
+            edoIrr
 
 
-VCPKG_ROOT= "vcpkg";
-# inherit irrlicht;
-inherit cacheFile;
+            (premake5.overrideAttrs (old: rec {
+              version = "5.0.0-alpha15";
 
-buildPhase =
+              src = fetchFromGitHub {
+                owner = "premake";
+                repo = "premake-core";
+                rev = "v${version}";
+                # sha256 = "0000000000000000000000000000000000000000000000000000";
+                # 12
+                # sha256 = "sha256-7mN7zhJ0++YO2xq1E0APskzwWaMCvEWstCT9dk3KcMA=";
+                #
+                # 14
+                # sha256 = "sha256-qwIE9qLE0hLNsZPhDrS1+BzwE3nZi8wcQ1AGS88SlrI=";
+                #
+                # 15
+                sha256 = "sha256-8Pdhqwek8zWLcahMgV+fdbsU3tA9oOnefvn6vvBhvDE=";
+              };
+            }))
 
-  ''
-pwd
-echo "root directory is $VCPKG_ROOT"
-mkdir -p "$VCPKG_ROOT"
-cd "$VCPKG_ROOT"
-pwd
-7z x ${cacheFile}
-echo "finished 7zipping"
-export CPLUS_INCLUDE_PATH=$CPLUS_INCLUDE_PATH:"$PWD/installed/x64-linux/include/irrlicht"
-echo "$CPLUS_INCLUDE_PATH"
-ls
-cd ..
-echo "Finished extraction"
-echo "my files are currently"
-ls
-premake5 gmake2 --vcpkg-root=$VCPKG_ROOT
-make -Cbuild -j2 config=debug ygoprodll
+            curl
+            flac
+            freetype
+            libevent
+            libgit2
+            libvorbis
+            nlohmann_json
+            openal
+            sqlite
+            wayland
+            xorg.libX11
+
+            # For NO_IRR_WAYLAND_DYNAMIC_LOAD_
+            libxkbcommon
+
+            # For NO_IRR_DYNAMIC_OPENGL_
+            libGL
+
+            # For Lua
+            readline
+
+            # For fmt
+            cmake
+
+          ];
+
+
+  VCPKG_ROOT= "vcpkg";
+  # inherit irrlicht;
+
+  buildPhase =
+
+    ''
+export LDFLAGS="$LDFLAGS -lwayland-client"
+premake5 gmake2
+make -Cbuild -j2 config=${type} ygoprodll
 '';
 
   installPhase = ''
     mkdir -p $out/bin
-    mv mytest.txt $out/bin
+    mv bin/${type}/ygoprodll $out/bin
   '';
 }
