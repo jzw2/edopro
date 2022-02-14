@@ -21,7 +21,7 @@ let edoIrr =
           xorg.libXxf86vm
         ];
       }));
-    type = "debug";
+    type = "release";
 in
 stdenv.mkDerivation {
   name = "edopro";
