@@ -21,6 +21,11 @@ let edoIrr =
           xorg.libXxf86vm
         ];
       }));
+
+    customFreetype = fetchzip {
+      url = "http://downloads.sourceforge.net/freetype/freetype-2.6.5.tar.bz2";
+      sha256 = "sha256-4HjWCJHG+51jNOrZ4zTua3BTLK+0iqVuMbuT9tPlBVA=";
+    };
     type = "release";
 in
 stdenv.mkDerivation {
@@ -88,6 +93,10 @@ stdenv.mkDerivation {
   buildPhase =
 
     ''
+echo Extracting FreeType...
+ln -s ${customFreetype}/builds freetype/builds
+ln -s ${customFreetype}/include freetype/include
+ln -s ${customFreetype}/src freetype/src
 export LDFLAGS="$LDFLAGS -lwayland-client"
 premake5 gmake2
 make -Cbuild -j2 config=${type} ygoprodll
