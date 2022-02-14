@@ -26,7 +26,7 @@ let edoIrr =
       url = "http://downloads.sourceforge.net/freetype/freetype-2.6.5.tar.bz2";
       sha256 = "sha256-4HjWCJHG+51jNOrZ4zTua3BTLK+0iqVuMbuT9tPlBVA=";
     };
-    type = "release";
+    type = "debug";
 in
 stdenv.mkDerivation {
   name = "edopro";
